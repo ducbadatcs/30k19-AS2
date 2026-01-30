@@ -6,33 +6,6 @@ from copy import deepcopy # there's a story this module is here
 import heapq
 from math import hypot
 
-class SearchResult:
-    # default for invalid path.
-    def __init__(self, path: List[str] = [], edges: Optional[Dict[str, Dict[str, int]]] = {}) -> None:
-        self.path = deepcopy(path)
-        self.edges = edges # global edge instance 
-        pass
-    
-    def cost(self) -> int:
-        if len(self.path) == 0 or self.edges is None : return -1
-        
-        c = 0
-        for start, end in zip(self.path[:-1], self.path[1:]):
-            c += self.edges[start][end]
-        return c
-    
-    def __lt__(self, other: "SearchResult") -> bool:
-        return self.cost() < other.cost()
-    
-    def __gt__(self, other: "SearchResult" ) -> bool:
-        return self.cost() > other.cost()
-    
-    def __eq__(self, other: "SearchResult") -> bool:
-        return self.cost() == other.cost()
-    
-    
-
-
 class BaseSearch:
     # lol very tricky type hint
     def __init__(self, 
@@ -47,7 +20,7 @@ class BaseSearch:
         self.destinations = deepcopy(destinations)
         
     @abstractmethod
-    def search(self) -> SearchResult:
+    def search(self) -> List[str]:
         """search _summary_
         
         Abstract Method for implementing search algorithms.
@@ -55,14 +28,22 @@ class BaseSearch:
 		Returns:
 			SearchModel: _description_
 		"""        
-        return SearchResult([])
+        return []
+    
+    def cost(self, path: List[str]) -> int:
+        if len(path) == 0 or self.edges is None : return -1
+        
+        c = 0
+        for start, end in zip(path[:-1], path[1:]):
+            c += self.edges[start][end]
+        return c
     
         
 class DFSSearch(BaseSearch):
     def __init__(self, nodes: Dict[str, List[int]], edges: Dict[str, Dict[str, int]], origin: str, destinations: List[str]) -> None:
         super().__init__(nodes, edges, origin, destinations)
         
-    def search(self) -> SearchResult:
+    def search(self) -> List[str]:
         """search _summary_
         
         Implement the DFS algorithm:
@@ -85,7 +66,7 @@ class DFSSearch(BaseSearch):
                     path.append(cur)
                     cur = parent.get(cur)
                 path.reverse()
-                return SearchResult(path, self.edges)
+                return path
             
             for node in self.edges.get(current, {}):
                 if node in visited:
@@ -93,13 +74,13 @@ class DFSSearch(BaseSearch):
                 visited.add(node)
                 parent[node] = current
                 stack.append(node)
-        return SearchResult([], self.edges)
+        return []
 
 class BFSSearch(BaseSearch):
     def __init__(self, nodes: Dict[str, List[int]], edges: Dict[str, Dict[str, int]], origin: str, destinations: List[str]) -> None:
         super().__init__(nodes, edges, origin, destinations)
         
-    def search(self) -> SearchResult:
+    def search(self) -> List[str]:
         """search _summary_
         
         Implement the BFS algorithm:
@@ -124,7 +105,7 @@ class BFSSearch(BaseSearch):
                     path.append(cur)
                     cur = parent.get(cur)
                 path.reverse()
-                return SearchResult(path, self.edges)
+                return path
             
             # otherwise, keep searching.
             for nxt in self.edges.get(current, {}).keys():
@@ -134,7 +115,7 @@ class BFSSearch(BaseSearch):
                 parent[nxt] = current
                 queue.append(nxt)
                         
-        return SearchResult([], self.edges)
+        return []
     
 class GBFSSearch(BaseSearch):
     def __init__(self, nodes: Dict[str, List[int]], edges: Dict[str, Dict[str, int]], origin: str, destinations: List[str]) -> None:
@@ -159,7 +140,7 @@ class GBFSSearch(BaseSearch):
         differences = [x - y for x, y in zip(c1, c2)]
         return hypot(*differences)
     
-    def search_with_specific_goal(self, goal: str) -> SearchResult:
+    def search_with_specific_goal(self, goal: str) -> List[str]:
         """search_with_specific_goal _summary_
         
         Test the GBFS algorithm with a specific goal, note that origin remain the same
@@ -188,7 +169,7 @@ class GBFSSearch(BaseSearch):
                     path.append(cur)
                     cur = parent[cur]
                 path.reverse()
-                return SearchResult(path, self.edges)
+                return path
                 
             for node in self.edges.get(current, {}).keys():
                 if node in visited: 
@@ -196,12 +177,12 @@ class GBFSSearch(BaseSearch):
                 visited.add(node)
                 parent[node] = current
                 prioirty_queue.push((self.euclidean(node, goal), node))
-        return SearchResult([], self.edges)
+        return []
         
     def heuristic(self, node: str) -> float:
         return min([self.euclidean(node, destination) for destination in self.destinations])
     
-    def search(self) -> SearchResult:
+    def search(self) -> List[str]:
         
         """search _summary_
         
@@ -227,7 +208,7 @@ class GBFSSearch(BaseSearch):
                     path.append(cur)
                     cur = parent[cur]
                 path.reverse()
-                return SearchResult(path, self.edges)
+                return path
                 
             for node in self.edges.get(current, {}).keys():
                 if node in visited: 
@@ -235,7 +216,7 @@ class GBFSSearch(BaseSearch):
                 visited.add(node)
                 parent[node] = current
                 prioirty_queue.push((self.heuristic(node), node))
-        return super().search()
+        return []
     
 
 # so I can steal the heurestic function
@@ -247,7 +228,7 @@ class AStarSearch(GBFSSearch):
         h = super().heuristic(node)
         return h 
         
-    def search(self) -> SearchResult:
+    def search(self) -> List[str]:
         """search _summary_
         
         Implement the A* algorithm.
@@ -279,7 +260,7 @@ class AStarSearch(GBFSSearch):
                     path.append(cur)
                     cur = parent[cur]
                 path.reverse()
-                return SearchResult(path, self.edges)
+                return path
                 
             for node in self.edges.get(current, {}).keys():
                 if node in visited: 
@@ -288,4 +269,4 @@ class AStarSearch(GBFSSearch):
                 costs[node] += self.edges[current][node]
                 parent[node] = current
                 prioirty_queue.push((costs[node] + self.heuristic(node), node))
-        return SearchResult([], self.edges)
+        return []

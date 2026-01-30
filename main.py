@@ -1,6 +1,6 @@
 from input import read_input
-from search import DFSSearch, BFSSearch, SearchResult, GBFSSearch, AStarSearch
-from typing import Optional
+from search import DFSSearch, BFSSearch, GBFSSearch, AStarSearch, BaseSearch
+from typing import Optional, List
 import argparse
     
 if __name__ == "__main__":
@@ -21,21 +21,23 @@ if __name__ == "__main__":
     algo = str(args.algo[0]).lower()
     print(algo)
     
-    result: Optional[SearchResult] = None
+    result: Optional[BaseSearch] = None
     if algo == "dfs":
-        result = DFSSearch(nodes, edges, origin, destinations).search()
+        result = DFSSearch(nodes, edges, origin, destinations)
     elif algo == "bfs":
-        result = BFSSearch(nodes, edges, origin, destinations).search()
+        result = BFSSearch(nodes, edges, origin, destinations)
     elif algo == "gbfs":
-        result = GBFSSearch(nodes, edges, origin, destinations).search()
+        result = GBFSSearch(nodes, edges, origin, destinations)
     elif algo == "astar":
-        result = AStarSearch(nodes, edges, origin, destinations).search()
+        result = AStarSearch(nodes, edges, origin, destinations)
     
-    result = AStarSearch(nodes, edges, origin, destinations).search()
+    # result = AStarSearch(nodes, edges, origin, destinations).search()
     assert result is not None, "yeah you screw up"
     print("Nodes:", nodes)
     print("Edges:", edges)
     print("Origin:", origin)
     print("Destinations:", destinations)
-    print("Path:" + "->".join(result.path))
-    print(f"Total cost: {result.cost()}")
+    
+    path = result.search()
+    print("Path:" + "->".join(path))
+    print(f"Total cost: {result.cost(path)}")
