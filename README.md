@@ -6,6 +6,6 @@ Things currently done:
 - [x] Has argument structure (you can pass `python main.py -a dfs` to pick DFS algorithm for example)
 
 Todo: 
-- [] Fix A* implementation (if applicable)
-- [] Add a GUI
-- [] Write report
+- [ ] Fix A* implementation (if applicable)
+- [ ] Add a GUI
+- [ ] Write report
