@@ -228,45 +228,84 @@ class AStarSearch(GBFSSearch):
         h = super().heuristic(node)
         return h 
         
-    def search(self) -> List[str]:
-        """search _summary_
+    # def search(self) -> List[str]:
+    #     """search _summary_
         
-        Implement the A* algorithm.
-        Note: so if we assume to find the optimal point by Euclidean distance to the goal....
+    #     Implement the A* algorithm.
+    #     Note: so if we assume to find the optimal point by Euclidean distance to the goal....
 
-        Returns:
-            SearchResult: _description_
-        """
-        prioirty_queue = PriorityQueue[Tuple[float, str]]()
-        prioirty_queue.push((self.heuristic(self.origin), self.origin))
+    #     Returns:
+    #         SearchResult: _description_
+    #     """
+    #     prioirty_queue = PriorityQueue[Tuple[float, str]]()
+    #     prioirty_queue.push((self.heuristic(self.origin), self.origin))
+    #     parent: Dict[str, Optional[str]] = {self.origin: None}
+        
+    #     costs: Dict[str, float] = {node: float("inf") for node in self.nodes}
+    #     costs[self.origin] = 0
+        
+    #     score: Dict[str, float] = {node: float("inf") for node in self.nodes}
+    #     score[self.origin] = self.heuristic(self.origin)
+        
+    #     visited: Set[str] = {self.origin}
+        
+    #     while len(prioirty_queue) > 0:
+    #         current = prioirty_queue.pop()[1]
+    #         if current in self.destinations:
+    #             # the usual traceback
+    #             path: List[str] = []
+    #             cur: Optional[str] = current
+    #             while cur is not None:
+    #                 # traceback
+    #                 path.append(cur)
+    #                 cur = parent[cur]
+    #             path.reverse()
+    #             return path
+                
+    #         for node in self.edges.get(current, {}).keys():
+    #             if node in visited: 
+    #                 continue
+    #             visited.add(node)
+    #             costs[node] += self.edges[current][node]
+    #             parent[node] = current
+    #             prioirty_queue.push((costs[node] + self.heuristic(node), node))
+    #     return []
+
+    def search(self) -> List[str]:
+
+        priority_queue = PriorityQueue[Tuple[float, str]]()
+        priority_queue.push((self.heuristic(self.origin), self.origin))
+        
         parent: Dict[str, Optional[str]] = {self.origin: None}
         
+        # g_score
         costs: Dict[str, float] = {node: float("inf") for node in self.nodes}
         costs[self.origin] = 0
         
-        score: Dict[str, float] = {node: float("inf") for node in self.nodes}
-        score[self.origin] = self.heuristic(self.origin)
-        
-        visited: Set[str] = {self.origin}
-        
-        while len(prioirty_queue) > 0:
-            current = prioirty_queue.pop()[1]
+        while len(priority_queue) > 0:
+
+            current = priority_queue.pop()[1]
+            
             if current in self.destinations:
-                # the usual traceback
-                path: List[str] = []
-                cur: Optional[str] = current
+
+                path = []
+                cur = current
                 while cur is not None:
-                    # traceback
                     path.append(cur)
                     cur = parent[cur]
                 path.reverse()
                 return path
                 
-            for node in self.edges.get(current, {}).keys():
-                if node in visited: 
-                    continue
-                visited.add(node)
-                costs[node] += self.edges[current][node]
-                parent[node] = current
-                prioirty_queue.push((costs[node] + self.heuristic(node), node))
+            for node, weight in self.edges.get(current, {}).items():
+                # NEW COST: g(current) + edge's weight
+                new_g_score = costs[current] + weight
+                
+                # IF (cheaper path found)
+                if new_g_score < costs[node]:
+                    parent[node] = current
+                    costs[node] = new_g_score
+                    # f_score = new_g_score + h(node)
+                    f_score = new_g_score + self.heuristic(node)
+                    priority_queue.push((f_score, node))
+                    
         return []
