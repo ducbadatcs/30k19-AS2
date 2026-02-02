@@ -1,5 +1,5 @@
 from input import read_input
-from search import DFSSearch, BFSSearch, GBFSSearch, AStarSearch, BaseSearch
+from search import DFSSearch, BFSSearch, GBFSSearch, AStarSearch, BaseSearch, UCSSearch
 from typing import Optional, List
 import argparse
     
@@ -12,8 +12,8 @@ if __name__ == "__main__":
     )
     
     parser.add_argument("-a", "--algo",  
-                        choices=["dfs", "bfs", "gbfs", "astar"], 
-                        default="dfs", nargs=1, help="Algorithm to choose (DFS, BFS, GBFS, A*)")
+                        choices=["dfs", "bfs", "gbfs", "astar", "ucs"], 
+                        default="dfs", nargs=1, help="Algorithm to choose (DFS, BFS, GBFS, A*, UCS  )")
     
     args = parser.parse_args()
     print("Parsed args:", args)
@@ -30,6 +30,9 @@ if __name__ == "__main__":
         result = GBFSSearch(nodes, edges, origin, destinations)
     elif algo == "astar":
         result = AStarSearch(nodes, edges, origin, destinations)
+    elif algo == "ucs":
+        result = UCSSearch(nodes, edges, origin, destinations)
+        
     
     # result = AStarSearch(nodes, edges, origin, destinations).search()
     assert result is not None, "yeah you screw up"
