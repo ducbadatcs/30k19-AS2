@@ -309,3 +309,62 @@ class AStarSearch(GBFSSearch):
                     priority_queue.push((f_score, node))
                     
         return []
+    
+class UCSSearch(BaseSearch):
+
+    def __init__(self, nodes: Dict[str, List[int]], edges: Dict[str, Dict[str, int]], origin: str, destinations: List[str]) -> None:
+        super().__init__(nodes, edges, origin, destinations)
+        
+    def search(self) -> List[str]:
+        
+        # Difference from A*: priority = new_cost (no heuristic).
+        # Uniform Cost Search (UCS) is a search algorithm used in artificial intelligence (AI) for finding the least cost path in a graph. It is a variant of Dijkstra's algorithm and is particularly useful when all edges of the graph have different weights, and the goal is to find the path with the minimum total cost from a start node to a goal node.
+    
+        # 1. Kởi tạo Frontier
+        frontier = PriorityQueue[Tuple[float, str]]() 
+        frontier.push((0, self.origin))
+        
+        # 2. Khởi tạo các Dict lưuh trữ
+        came_from: Dict[str, Optional[str]] = {}
+        cost_so_far: Dict[str, float] = {}
+        
+        came_from[self.origin] = None
+        cost_so_far[self.origin] = 0
+        
+        final_destination = None
+
+        while len(frontier) > 0:
+            # Lấy phần tử có chi phí tích lũy thấp nhất
+            _, current = frontier.pop()
+
+            # Early Exit: Nếu chạm đích thì dừng ngay
+            if current in self.destinations:
+                final_destination = current
+                break
+            
+            # Duyệt các hàng xóm
+            for next_node, weight in self.edges.get(current, {}).items():
+                new_cost = cost_so_far[current] + weight
+                
+                # Logic cốt lõi giống A*: Nếu tìm thấy đường rẻ hơn
+                if next_node not in cost_so_far or new_cost < cost_so_far[next_node]:
+                    cost_so_far[next_node] = new_cost
+                    
+                    # DIJKSTRA KEY DIFFERENCE:
+                    # Độ ưu tiên CHỈ LÀ chi phí thực tế (g), không cộng thêm heuristic.
+                    priority = new_cost 
+                    
+                    frontier.push((priority, next_node))
+                    came_from[next_node] = current
+        
+        # 3. Truy vết đường đi (Reconstruct Path)
+        if final_destination:
+            path: List[str] = []
+            cur: Optional[str] = final_destination
+            while cur is not None:
+                path.append(cur)
+                cur = came_from[cur]
+            path.reverse()
+            return path
+            
+        return []
