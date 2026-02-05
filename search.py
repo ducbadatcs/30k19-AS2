@@ -368,3 +368,74 @@ class UCSSearch(BaseSearch):
             return path
             
         return []
+
+class IDAStarSearch(BaseSearch):
+    def __init__(self, 
+                 nodes: Dict[str, List[int]],
+                 edges: Dict[str, Dict[str, int]], 
+                 origin: str,
+                 destinations: List[str]) -> None:
+        super().__init__(nodes, edges, origin, destinations)
+
+    # Heuristic h(n):
+    # Ước lượng chi phí thấp nhất từ node hiện tại tới đích gần nhất
+    # Ở đây dùng khoảng cách Euclidean giữa các node
+    def heuristic(self, node: str) -> float:
+        def euclidean(s1: str, s2: str) -> float:
+            c1 = self.nodes[s1]
+            c2 = self.nodes[s2]
+            return hypot(c1[0] - c2[0], c1[1] - c2[1])
+
+        return min(euclidean(node, d) for d in self.destinations)
+
+    def search(self) -> List[str]:
+        # threshold: ngưỡng f-cost ban đầu
+        # f(n) = g(n) + h(n)
+        threshold = self.heuristic(self.origin)
+        # path: danh sách node biểu diễn đường đi hiện tại từ gốc tới node đang xét
+        path: List[str] = [self.origin]
+
+        while True:
+        # Bắt đầu DFS giới hạn bởi threshold
+            temp = self._dfs(path, 0, threshold)
+            if temp == "FOUND":
+                return path
+            if temp == float("inf"):
+                return []
+            threshold = temp
+
+    def _dfs(self, path: List[str], g: float, threshold: float):
+        #DFS có giới hạn f-cost
+
+        #path[-1] : node hiện tại (current state)
+        #g        : chi phí từ start -> node hiện tại (g(n))
+        #h(n)     : heuristic(node)
+        #f(n)     : g(n) + h(n)
+
+        current = path[-1]
+        f = g + self.heuristic(current)
+
+        # Nếu vượt ngưỡng
+        if f > threshold:
+            return f
+
+        # Nếu là đích
+        if current in self.destinations:
+            return "FOUND"
+
+        min_threshold = float("inf")
+
+        for neighbor, cost in self.edges.get(current, {}).items():
+            if neighbor in path:
+                continue  # tránh chu trình
+
+            path.append(neighbor)
+            temp = self._dfs(path, g + cost, threshold)
+
+            if temp == "FOUND":
+                return "FOUND"
+
+            min_threshold = min(min_threshold, temp)
+            path.pop()
+
+        return min_threshold
