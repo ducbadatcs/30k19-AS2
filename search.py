@@ -54,9 +54,13 @@ class DFSSearch(BaseSearch):
         stack: Deque[str] = deque([self.origin])
         parent: Dict[str, Optional[str]] = {self.origin: None}
         visited: Set[str] = {self.origin}
+
+        nodes_expanded = 0
         
         while len(stack) > 0:
             current = stack.pop()
+            nodes_expanded += 1
+
             if current in self.destinations:
                 # reconstruct path
                 path: List[str] = []
@@ -66,15 +70,17 @@ class DFSSearch(BaseSearch):
                     path.append(cur)
                     cur = parent.get(cur)
                 path.reverse()
-                return path
+                return path, nodes_expanded
             
-            for node in self.edges.get(current, {}):
+            neighbors = sorted(self.edges.get(current, {}).keys(), reverse=True)
+
+            for node in neighbors:
                 if node in visited:
                     continue
                 visited.add(node)
                 parent[node] = current
                 stack.append(node)
-        return []
+        return [], nodes_expanded
 
 class BFSSearch(BaseSearch):
     def __init__(self, nodes: Dict[str, List[int]], edges: Dict[str, Dict[str, int]], origin: str, destinations: List[str]) -> None:
@@ -91,9 +97,12 @@ class BFSSearch(BaseSearch):
         queue: Deque[str] = deque([self.origin])
         parent: Dict[str, Optional[str]] = {self.origin: None}
         visited: Set[str] = {self.origin}
+
+        nodes_expanded = 0
         
         while len(queue) > 0:
             current = queue.popleft()
+            nodes_expanded += 1
 
             # get current point. If it is a destination, return.
             if current in self.destinations:
@@ -105,17 +114,19 @@ class BFSSearch(BaseSearch):
                     path.append(cur)
                     cur = parent.get(cur)
                 path.reverse()
-                return path
+                return path, nodes_expanded
             
+            neighbors = sorted(self.edges.get(current, {}).keys())
+
             # otherwise, keep searching.
-            for nxt in self.edges.get(current, {}).keys():
+            for nxt in neighbors:
                 if nxt in visited:
                     continue
                 visited.add(nxt)
                 parent[nxt] = current
                 queue.append(nxt)
                         
-        return []
+        return [], nodes_expanded
     
 class GBFSSearch(BaseSearch):
     def __init__(self, nodes: Dict[str, List[int]], edges: Dict[str, Dict[str, int]], origin: str, destinations: List[str]) -> None:
@@ -196,9 +207,13 @@ class GBFSSearch(BaseSearch):
         prioirty_queue.push((self.heuristic(self.origin), self.origin))
         parent: Dict[str, Optional[str]] = {self.origin: None}
         visited: Set[str] = {self.origin}
+
+        nodes_expanded = 0
         
         while len(prioirty_queue) > 0:
             current = prioirty_queue.pop()[1]
+            nodes_expanded += 1
+
             if current in self.destinations:
                 # the usual traceback
                 path: List[str] = []
@@ -208,7 +223,7 @@ class GBFSSearch(BaseSearch):
                     path.append(cur)
                     cur = parent[cur]
                 path.reverse()
-                return path
+                return path, nodes_expanded
                 
             for node in self.edges.get(current, {}).keys():
                 if node in visited: 
@@ -216,7 +231,7 @@ class GBFSSearch(BaseSearch):
                 visited.add(node)
                 parent[node] = current
                 prioirty_queue.push((self.heuristic(node), node))
-        return []
+        return [], nodes_expanded
     
 
 # so I can steal the heurestic function
@@ -227,49 +242,6 @@ class AStarSearch(GBFSSearch):
     def heuristic(self, node: str) -> float:
         h = super().heuristic(node)
         return h 
-        
-    # def search(self) -> List[str]:
-    #     """search _summary_
-        
-    #     Implement the A* algorithm.
-    #     Note: so if we assume to find the optimal point by Euclidean distance to the goal....
-
-    #     Returns:
-    #         SearchResult: _description_
-    #     """
-    #     prioirty_queue = PriorityQueue[Tuple[float, str]]()
-    #     prioirty_queue.push((self.heuristic(self.origin), self.origin))
-    #     parent: Dict[str, Optional[str]] = {self.origin: None}
-        
-    #     costs: Dict[str, float] = {node: float("inf") for node in self.nodes}
-    #     costs[self.origin] = 0
-        
-    #     score: Dict[str, float] = {node: float("inf") for node in self.nodes}
-    #     score[self.origin] = self.heuristic(self.origin)
-        
-    #     visited: Set[str] = {self.origin}
-        
-    #     while len(prioirty_queue) > 0:
-    #         current = prioirty_queue.pop()[1]
-    #         if current in self.destinations:
-    #             # the usual traceback
-    #             path: List[str] = []
-    #             cur: Optional[str] = current
-    #             while cur is not None:
-    #                 # traceback
-    #                 path.append(cur)
-    #                 cur = parent[cur]
-    #             path.reverse()
-    #             return path
-                
-    #         for node in self.edges.get(current, {}).keys():
-    #             if node in visited: 
-    #                 continue
-    #             visited.add(node)
-    #             costs[node] += self.edges[current][node]
-    #             parent[node] = current
-    #             prioirty_queue.push((costs[node] + self.heuristic(node), node))
-    #     return []
 
     def search(self) -> List[str]:
 
@@ -281,20 +253,22 @@ class AStarSearch(GBFSSearch):
         # g_score
         costs: Dict[str, float] = {node: float("inf") for node in self.nodes}
         costs[self.origin] = 0
+
+        nodes_expanded = 0
         
         while len(priority_queue) > 0:
 
             current = priority_queue.pop()[1]
+            nodes_expanded += 1
             
             if current in self.destinations:
-
                 path = []
                 cur = current
                 while cur is not None:
                     path.append(cur)
                     cur = parent[cur]
                 path.reverse()
-                return path
+                return path, nodes_expanded
                 
             for node, weight in self.edges.get(current, {}).items():
                 # NEW COST: g(current) + edge's weight
@@ -308,7 +282,7 @@ class AStarSearch(GBFSSearch):
                     f_score = new_g_score + self.heuristic(node)
                     priority_queue.push((f_score, node))
                     
-        return []
+        return [], nodes_expanded
     
 class UCSSearch(BaseSearch):
 
@@ -320,7 +294,7 @@ class UCSSearch(BaseSearch):
         # Difference from A*: priority = new_cost (no heuristic).
         # Uniform Cost Search (UCS) is a search algorithm used in artificial intelligence (AI) for finding the least cost path in a graph. It is a variant of Dijkstra's algorithm and is particularly useful when all edges of the graph have different weights, and the goal is to find the path with the minimum total cost from a start node to a goal node.
     
-        # 1. Kởi tạo Frontier
+        # 1. Khởi tạo Frontier
         frontier = PriorityQueue[Tuple[float, str]]() 
         frontier.push((0, self.origin))
         
@@ -332,10 +306,12 @@ class UCSSearch(BaseSearch):
         cost_so_far[self.origin] = 0
         
         final_destination = None
+        nodes_expanded = 0
 
         while len(frontier) > 0:
             # Lấy phần tử có chi phí tích lũy thấp nhất
             _, current = frontier.pop()
+            nodes_expanded += 1
 
             # Early Exit: Nếu chạm đích thì dừng ngay
             if current in self.destinations:
@@ -365,9 +341,9 @@ class UCSSearch(BaseSearch):
                 path.append(cur)
                 cur = came_from[cur]
             path.reverse()
-            return path
+            return path, nodes_expanded
             
-        return []
+        return [], nodes_expanded
 
 class IDAStarSearch(BaseSearch):
     def __init__(self, 
@@ -376,6 +352,7 @@ class IDAStarSearch(BaseSearch):
                  origin: str,
                  destinations: List[str]) -> None:
         super().__init__(nodes, edges, origin, destinations)
+        self.node_expanded = 0
 
     # Heuristic h(n):
     # Ước lượng chi phí thấp nhất từ node hiện tại tới đích gần nhất
@@ -391,6 +368,7 @@ class IDAStarSearch(BaseSearch):
     def search(self) -> List[str]:
         # threshold: ngưỡng f-cost ban đầu
         # f(n) = g(n) + h(n)
+        self.node_expanded = 0
         threshold = self.heuristic(self.origin)
         # path: danh sách node biểu diễn đường đi hiện tại từ gốc tới node đang xét
         path: List[str] = [self.origin]
@@ -399,9 +377,9 @@ class IDAStarSearch(BaseSearch):
         # Bắt đầu DFS giới hạn bởi threshold
             temp = self._dfs(path, 0, threshold)
             if temp == "FOUND":
-                return path
+                return path, self.node_expanded
             if temp == float("inf"):
-                return []
+                return [], self.node_expanded
             threshold = temp
 
     def _dfs(self, path: List[str], g: float, threshold: float):
@@ -413,6 +391,8 @@ class IDAStarSearch(BaseSearch):
         #f(n)     : g(n) + h(n)
 
         current = path[-1]
+        self.node_expanded += 1
+
         f = g + self.heuristic(current)
 
         # Nếu vượt ngưỡng
@@ -425,7 +405,9 @@ class IDAStarSearch(BaseSearch):
 
         min_threshold = float("inf")
 
-        for neighbor, cost in self.edges.get(current, {}).items():
+        neighbors = sorted(self.edges.get(current, {}).items())
+
+        for neighbor, cost in neighbors:
             if neighbor in path:
                 continue  # tránh chu trình
 

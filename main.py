@@ -32,13 +32,13 @@ if __name__ == "__main__":
     
     assert result is not None, "Error: Invalid Algorithm"
     
-    
-    path = result.search()
+    path, expanded_count = result.search()
     
     if len(path) > 0:
-        print(f"{filename} {method}")
-        print(f"{path[-1]} {len(path)}")
-        print("->".join(path))
+        print(f"File name: {filename}; Method: {method}")
+        print(f"Start: {origin}; Goal: {path[-1]}; Number of nodes: {expanded_count}")
+        print(f"Path: {'->'.join(path)}")
+        print(f"Total path cost: {result.cost(path)}")
     else:
         print("Path not found.")
         
