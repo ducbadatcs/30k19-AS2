@@ -1,47 +1,53 @@
 from input import read_input
+from sys import argv
 from search import DFSSearch, BFSSearch, GBFSSearch, AStarSearch, BaseSearch, UCSSearch, IDAStarSearch
 from typing import Optional, List
 import argparse
     
 if __name__ == "__main__":
-    nodes, edges, origin, destinations = read_input("./example.txt")
-    
-    # CLI arguments
     parser = argparse.ArgumentParser(
         prog="Route Finder", description="COS30019 Route Finding Program for Assignment 2A"
     )
     
-    parser.add_argument("-a", "--algo",  
-                        choices=["dfs", "bfs", "gbfs", "astar", "ucs", "idastar"], 
-                        default="dfs", nargs=1, help="Algorithm to choose (DFS, BFS, GBFS, A*, UCS, IDASTAR)")
+    if len(argv) != 3:
+        raise Exception("Error: Invalid number of arguments.")
     
-    args = parser.parse_args()
-    print("Parsed args:", args)
+    filename = argv[1]
+    method = argv[2]
     
-    algo = str(args.algo[0]).lower()
-    print(algo)
+    nodes, edges, origin, destinations = read_input(filename)
     
     result: Optional[BaseSearch] = None
-    if algo == "dfs":
-        result = DFSSearch(nodes, edges, origin, destinations)
-    elif algo == "bfs":
-        result = BFSSearch(nodes, edges, origin, destinations)
-    elif algo == "gbfs":
-        result = GBFSSearch(nodes, edges, origin, destinations)
-    elif algo == "astar":
-        result = AStarSearch(nodes, edges, origin, destinations)
-    elif algo == "ucs":
-        result = UCSSearch(nodes, edges, origin, destinations)
-    elif algo == "idastar":
-        result = IDAStarSearch(nodes, edges, origin, destinations)
     
-    # result = AStarSearch(nodes, edges, origin, destinations).search()
-    assert result is not None, "yeah you screw up"
-    print("Nodes:", nodes)
-    print("Edges:", edges)
-    print("Origin:", origin)
-    print("Destinations:", destinations)
+    match method:
+        case "dfs": result = DFSSearch(nodes, edges, origin, destinations)
+        case "bfs": result = BFSSearch(nodes, edges, origin, destinations)
+        case "gbfs": result = GBFSSearch(nodes, edges, origin, destinations)
+        case "astar": result = AStarSearch(nodes, edges, origin, destinations)
+        case "ucs": result = UCSSearch(nodes, edges, origin, destinations)
+        case "idastar": result = IDAStarSearch(nodes, edges, origin, destinations)
+        case _:
+            raise Exception("Invalid Algorithm")
+    
+    
+    assert result is not None, "Error: Invalid Algorithm"
+    
     
     path = result.search()
-    print("Path:" + "->".join(path))
-    print(f"Total cost: {result.cost(path)}")
+    
+    if len(path) > 0:
+        print(f"{filename} {method}")
+        print(f"{path[-1]} {len(path)}")
+        print("->".join(path))
+    else:
+        print("Path not found.")
+        
+    with open("result.log", "w") as res:
+        res.writelines([
+            "Nodes: " + str(nodes),
+            "Edges: " + str(edges),
+            "Origin: " + str(origin),
+            "Destinations: " + str(destinations),
+            "Path:" + "->".join(path),
+            "Path cost: " + str(result.cost(path))
+        ])
