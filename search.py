@@ -20,7 +20,7 @@ class BaseSearch:
         self.destinations = deepcopy(destinations)
         
     @abstractmethod
-    def search(self) -> List[str]:
+    def search(self) -> Tuple[List[str], int]:
         """search _summary_
         
         Abstract Method for implementing search algorithms.
@@ -28,7 +28,7 @@ class BaseSearch:
 		Returns:
 			SearchModel: _description_
 		"""        
-        return []
+        return ([], 0)
     
     def cost(self, path: List[str]) -> int:
         if len(path) == 0 or self.edges is None : return -1
@@ -43,7 +43,7 @@ class DFSSearch(BaseSearch):
     def __init__(self, nodes: Dict[str, List[int]], edges: Dict[str, Dict[str, int]], origin: str, destinations: List[str]) -> None:
         super().__init__(nodes, edges, origin, destinations)
         
-    def search(self) -> List[str]:
+    def search(self) -> Tuple[List[str], int]:
         """search _summary_
         
         Implement the DFS algorithm:
@@ -70,7 +70,7 @@ class DFSSearch(BaseSearch):
                     path.append(cur)
                     cur = parent.get(cur)
                 path.reverse()
-                return path, nodes_expanded
+                return (path, nodes_expanded)
             
             neighbors = sorted(self.edges.get(current, {}).keys(), reverse=True)
 
@@ -80,13 +80,13 @@ class DFSSearch(BaseSearch):
                 visited.add(node)
                 parent[node] = current
                 stack.append(node)
-        return [], nodes_expanded
+        return ([], nodes_expanded)
 
 class BFSSearch(BaseSearch):
     def __init__(self, nodes: Dict[str, List[int]], edges: Dict[str, Dict[str, int]], origin: str, destinations: List[str]) -> None:
         super().__init__(nodes, edges, origin, destinations)
         
-    def search(self) -> List[str]:
+    def search(self) -> Tuple[List[str], int]:
         """search _summary_
         
         Implement the BFS algorithm:
@@ -193,7 +193,7 @@ class GBFSSearch(BaseSearch):
     def heuristic(self, node: str) -> float:
         return min([self.euclidean(node, destination) for destination in self.destinations])
     
-    def search(self) -> List[str]:
+    def search(self) -> Tuple[List[str], int]:
         
         """search _summary_
         
@@ -243,7 +243,7 @@ class AStarSearch(GBFSSearch):
         h = super().heuristic(node)
         return h 
 
-    def search(self) -> List[str]:
+    def search(self) -> Tuple[List[str], int]:
 
         priority_queue = PriorityQueue[Tuple[float, str]]()
         priority_queue.push((self.heuristic(self.origin), self.origin))
@@ -289,7 +289,7 @@ class UCSSearch(BaseSearch):
     def __init__(self, nodes: Dict[str, List[int]], edges: Dict[str, Dict[str, int]], origin: str, destinations: List[str]) -> None:
         super().__init__(nodes, edges, origin, destinations)
         
-    def search(self) -> List[str]:
+    def search(self) -> Tuple[List[str], int]:
         
         # Difference from A*: priority = new_cost (no heuristic).
         # Uniform Cost Search (UCS) is a search algorithm used in artificial intelligence (AI) for finding the least cost path in a graph. It is a variant of Dijkstra's algorithm and is particularly useful when all edges of the graph have different weights, and the goal is to find the path with the minimum total cost from a start node to a goal node.
@@ -365,7 +365,7 @@ class IDAStarSearch(BaseSearch):
 
         return min(euclidean(node, d) for d in self.destinations)
 
-    def search(self) -> List[str]:
+    def search(self) -> Tuple[List[str], int]:
         # threshold: ngưỡng f-cost ban đầu
         # f(n) = g(n) + h(n)
         self.node_expanded = 0
