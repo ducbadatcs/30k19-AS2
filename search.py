@@ -30,13 +30,40 @@ class BaseSearch:
 		"""        
         return ([], 0)
     
+    # helper methods
     def cost(self, path: List[str]) -> int:
+        """cost Helper method to get cost of path
+
+        Args:
+            path (List[str]): _description_
+
+        Returns:
+            int: _description_
+        """
         if len(path) == 0 or self.edges is None : return -1
         
         c = 0
         for start, end in zip(path[:-1], path[1:]):
             c += self.edges[start][end]
         return c
+    
+    def reconstruct_path(self, current: str, parent: Dict[str, Optional[str]]) -> List[str]:
+        """reconstruct_path Helper to reconstruct path to the origin.
+
+        Args:
+            current (str): _description_
+            parent (Dict[str, Optional[str]]): _description_
+
+        Returns:
+            List[str]: _description_
+        """
+        path = []
+        cur = current
+        while cur is not None:
+            path.append(cur)
+            cur = parent.get(cur)
+        path.reverse()
+        return path
     
         
 class DFSSearch(BaseSearch):
@@ -63,14 +90,7 @@ class DFSSearch(BaseSearch):
 
             if current in self.destinations:
                 # reconstruct path
-                path: List[str] = []
-                cur: Optional[str] = current
-                while cur is not None:
-                    # traceback by parent
-                    path.append(cur)
-                    cur = parent.get(cur)
-                path.reverse()
-                return (path, nodes_expanded)
+                return (self.reconstruct_path(current, parent), nodes_expanded)
             
             neighbors = sorted(self.edges.get(current, {}).keys(), reverse=True)
 
@@ -106,15 +126,7 @@ class BFSSearch(BaseSearch):
 
             # get current point. If it is a destination, return.
             if current in self.destinations:
-                # reconstruct path
-                path: List[str] = []
-                cur: Optional[str] = current
-                while cur is not None:
-                    # traceback by parent
-                    path.append(cur)
-                    cur = parent.get(cur)
-                path.reverse()
-                return path, nodes_expanded
+                return (self.reconstruct_path(current, parent), nodes_expanded)
             
             neighbors = sorted(self.edges.get(current, {}).keys())
 
@@ -151,7 +163,7 @@ class GBFSSearch(BaseSearch):
         differences = [x - y for x, y in zip(c1, c2)]
         return hypot(*differences)
     
-    def search_with_specific_goal(self, goal: str) -> List[str]:
+    def search_with_specific_goal(self, goal: str) -> Tuple[List[str], int]:
         """search_with_specific_goal _summary_
         
         Test the GBFS algorithm with a specific goal, note that origin remain the same
@@ -167,20 +179,15 @@ class GBFSSearch(BaseSearch):
         prioirty_queue.push((self.euclidean(self.origin, goal), self.origin))
         parent: Dict[str, Optional[str]] = {self.origin: None}
         visited: Set[str] = {self.origin}
+        nodes_expanded = 0
         
         while len(prioirty_queue) > 0:
+            
             # we don't really need the cost, it's mainly for navigation only
             current = prioirty_queue.pop()[1]
+            nodes_expanded += 1
             if current == goal:
-                # the usual traceback
-                path: List[str] = []
-                cur: Optional[str] = current
-                while cur is not None:
-                    # traceback
-                    path.append(cur)
-                    cur = parent[cur]
-                path.reverse()
-                return path
+                return (self.reconstruct_path(current, parent), nodes_expanded)
                 
             for node in self.edges.get(current, {}).keys():
                 if node in visited: 
@@ -188,7 +195,7 @@ class GBFSSearch(BaseSearch):
                 visited.add(node)
                 parent[node] = current
                 prioirty_queue.push((self.euclidean(node, goal), node))
-        return []
+        return ([], nodes_expanded)
         
     def heuristic(self, node: str) -> float:
         return min([self.euclidean(node, destination) for destination in self.destinations])
@@ -216,14 +223,7 @@ class GBFSSearch(BaseSearch):
 
             if current in self.destinations:
                 # the usual traceback
-                path: List[str] = []
-                cur: Optional[str] = current
-                while cur is not None:
-                    # traceback
-                    path.append(cur)
-                    cur = parent[cur]
-                path.reverse()
-                return path, nodes_expanded
+                return (self.reconstruct_path(current, parent), nodes_expanded)
                 
             for node in self.edges.get(current, {}).keys():
                 if node in visited: 
@@ -262,13 +262,7 @@ class AStarSearch(GBFSSearch):
             nodes_expanded += 1
             
             if current in self.destinations:
-                path = []
-                cur = current
-                while cur is not None:
-                    path.append(cur)
-                    cur = parent[cur]
-                path.reverse()
-                return path, nodes_expanded
+                return (self.reconstruct_path(current, parent), nodes_expanded)
                 
             for node, weight in self.edges.get(current, {}).items():
                 # NEW COST: g(current) + edge's weight
@@ -315,7 +309,7 @@ class UCSSearch(BaseSearch):
 
             # Early Exit: Nếu chạm đích thì dừng ngay
             if current in self.destinations:
-                final_destination = current
+                return (self.reconstruct_path(current, came_from), nodes_expanded)
                 break
             
             # Duyệt các hàng xóm
@@ -333,17 +327,8 @@ class UCSSearch(BaseSearch):
                     frontier.push((priority, next_node))
                     came_from[next_node] = current
         
-        # 3. Truy vết đường đi (Reconstruct Path)
-        if final_destination:
-            path: List[str] = []
-            cur: Optional[str] = final_destination
-            while cur is not None:
-                path.append(cur)
-                cur = came_from[cur]
-            path.reverse()
-            return path, nodes_expanded
             
-        return [], nodes_expanded
+        return ([], nodes_expanded)
 
 class IDAStarSearch(BaseSearch):
     def __init__(self, 
